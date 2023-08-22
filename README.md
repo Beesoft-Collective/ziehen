@@ -1,2 +1,2 @@
 # ziehen
-A Simple JavaScript Drag and Drop Library
+A Simple TypeScript Drag and Drop Library
