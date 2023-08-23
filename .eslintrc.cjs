@@ -13,8 +13,8 @@ module.exports = {
     // eslint specific rule changes.
     'prettier/prettier': 'warn',
     'import/prefer-default-export': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
     'no-use-before-define': 'warn',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'error',
   },
 };
