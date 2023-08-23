@@ -1,0 +1,51 @@
+{
+  "name": "ziehen",
+  "private": false,
+  "author": "Brandon Trabon",
+  "version": "0.0.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Beehive-Software-Consultants/ziehen"
+  },
+  "main": "./dist/ziehen.umd.js",
+  "module": "./dist/ziehen.es.js",
+  "types": "./types/index.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "rimraf dist/* && rimraf types/* && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@release-it/bumper": "^5.1.0",
+    "@rollup/plugin-terser": "^0.4.3",
+    "@types/node": "^20.5.2",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.2",
+    "release-it": "^16.1.5",
+    "rimraf": "^5.0.1",
+    "rollup-plugin-gzip": "^3.1.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-dts": "^3.5.2"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/ziehen.es.js",
+      "require": "./dist/ziehen.umd.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "license": "MIT"
+}
