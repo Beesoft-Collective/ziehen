@@ -20,6 +20,9 @@
     "build": "rimraf dist/* && rimraf types/* && vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
   "devDependencies": {
     "@release-it/bumper": "^5.1.0",
     "@rollup/plugin-terser": "^0.4.3",
