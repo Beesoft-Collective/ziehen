@@ -19,34 +19,33 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     isContainer: globalOptions.isContainer || never,
   };
 
-  const processContainers = (settings: Array<ContainerSetting>) => {
+  processContainers(containers);
+  registerEvents();
+
+  function processContainers(settings: Array<ContainerSetting>) {
     for (let i = 0, length = settings.length; i < length; i++) {
       const setting = settings[i];
       setting.items = setting.container.children;
     }
-  };
-
-  processContainers(containers);
+  }
 
   // the name for the returned dragging object will be geschleppt (what was drake)
 
-  const isContainer = (element: Element) => {
+  function isContainer(element: Element) {
     const index = containers.findIndex((setting) => setting.container.isSameNode(element));
     return index > -1 || options.isContainer(element);
-  };
+  }
 
-  const registerEvents = (shouldRemove = true) => {
+  function registerEvents(shouldRemove = true) {
     const operation: OperationType = shouldRemove ? 'remove' : 'add';
     registerMouseEvents(operation, 'mousedown', grab);
-  };
+  }
 
-  registerEvents();
-
-  const registerMovementEvents = (shouldRemove = true) => {
+  function registerMovementEvents(shouldRemove = true) {
     const operation: OperationType = shouldRemove ? 'remove' : 'add';
-  };
+  }
 
-  const registerMouseEvents = (operation: OperationType, eventType: MouseTypes, func: (event: MouseEvent | TouchEvent) => void) => {
+  function registerMouseEvents(operation: OperationType, eventType: MouseTypes, func: (event: MouseEvent | TouchEvent) => void) {
     const touch = {
       mouseup: 'touchend',
       mousedown: 'touchstart',
@@ -60,14 +59,14 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
       document.removeEventListener(eventType, func);
       document.removeEventListener(touch[eventType] as TouchTypes, func);
     }
-  };
+  }
 
-  const grab = (event: MouseEvent | TouchEvent) => {
+  function grab(event: MouseEvent | TouchEvent) {
     const mouseEvent = event as MouseEvent;
     if (mouseEvent.button !== 0 || mouseEvent.metaKey || mouseEvent.ctrlKey) {
       return;
     }
-  };
+  }
 };
 
 const never = (...args: Array<unknown>) => false;
