@@ -1,4 +1,5 @@
 // this will contain most of the code for the project
+import ziehenEmitter from './ziehen-emitter.ts';
 import {
   ContainerSetting,
   GlobalOptions,
@@ -12,15 +13,22 @@ import {
 const documentElement = document.documentElement;
 
 const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOptions) => {
-  let _grabbed: GrabbedContext;
+  let _grabbed: GrabbedContext | undefined;
 
   const options: WithRequiredProperty<GlobalOptions, 'isContainer'> = {
     mirrorContainer: document.body,
     isContainer: globalOptions.isContainer || never,
   };
 
+  // the name for the returned dragging object will be geschleppt (what was drake)
+  const geschleppt = ziehenEmitter({
+    containers: containers.map((setting) => setting.container),
+  });
+
   processContainers(containers);
   registerEvents();
+
+  return geschleppt;
 
   function processContainers(settings: Array<ContainerSetting>) {
     for (let i = 0, length = settings.length; i < length; i++) {
@@ -28,8 +36,6 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
       setting.items = setting.container.children;
     }
   }
-
-  // the name for the returned dragging object will be geschleppt (what was drake)
 
   function isContainer(element: Element) {
     const index = containers.findIndex((setting) => setting.container.isSameNode(element));
@@ -39,10 +45,12 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   function registerEvents(shouldRemove = true) {
     const operation: OperationType = shouldRemove ? 'remove' : 'add';
     registerMouseEvents(operation, 'mousedown', grab);
+    registerMouseEvents(operation, 'mouseup', release);
   }
 
-  function registerMovementEvents(shouldRemove = true) {
+  function registerMovementEvents(shouldRemove = false) {
     const operation: OperationType = shouldRemove ? 'remove' : 'add';
+    registerMouseEvents(operation, 'mousemove', startSinceMouseMoved);
   }
 
   function registerMouseEvents(operation: OperationType, eventType: MouseTypes, func: (event: MouseEvent | TouchEvent) => void) {
@@ -60,12 +68,29 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
       document.removeEventListener(touch[eventType] as TouchTypes, func);
     }
   }
+  
+  function startSinceMouseMoved(event: MouseEvent | TouchEvent) {
+    if (!_grabbed) {
+      return;
+    }
+  }
 
   function grab(event: MouseEvent | TouchEvent) {
     const mouseEvent = event as MouseEvent;
     if (mouseEvent.button !== 0 || mouseEvent.metaKey || mouseEvent.ctrlKey) {
       return;
     }
+
+    registerMovementEvents();
+  }
+
+  function ungrab() {
+    _grabbed = undefined;
+  }
+  
+  function release(event: MouseEvent | TouchEvent) {
+    ungrab();
+    registerMovementEvents(true);
   }
 };
 

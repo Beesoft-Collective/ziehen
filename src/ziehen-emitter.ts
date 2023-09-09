@@ -39,9 +39,17 @@ const ziehenEmitter = (object?: Omit<Geschleppt, 'on' | 'once' | 'off'>) => {
   emitter.emit = (type, ...args) => {
     const eventArray = events[type] || [];
     if (eventArray.length > 0) {
-
+      eventArray.forEach((listener) => {
+        // @ts-ignore
+        listener.apply(listener, args);
+        if (listener._once) {
+          emitter.off(type, listener);
+        }
+      })
     }
   };
+
+  return emitter;
 };
 
 export default ziehenEmitter;

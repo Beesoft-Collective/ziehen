@@ -45,7 +45,7 @@ export interface Geschleppt {
 }
 
 export interface GeschlepptPrivate {
-  emit: (type: EmitterEvents, ...args: Array<unknown>) => void;
+  emit: (type: EmitterEvents, ...args: Array<Element | HTMLElement | string>) => void;
 }
 
 export type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
