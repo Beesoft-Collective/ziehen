@@ -14,31 +14,27 @@ const documentElement = document.documentElement;
 
 const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOptions) => {
   let _grabbed: GrabbedContext | undefined;
+  let _mirror: HTMLElement | undefined;
 
-  const options: WithRequiredProperty<GlobalOptions, 'isContainer'> = {
+  const options: WithRequiredProperty<GlobalOptions, 'isContainer' | 'isInvalid' | 'isMovable'> = {
     mirrorContainer: document.body,
     isContainer: globalOptions.isContainer || never,
+    isInvalid: globalOptions.isInvalid || never,
+    isMovable: globalOptions.isMovable || always,
   };
 
   // the name for the returned dragging object will be geschleppt (what was drake)
   const geschleppt = ziehenEmitter({
     containers: containers.map((setting) => setting.container),
+    isDragging: false,
   });
 
-  processContainers(containers);
   registerEvents();
 
   return geschleppt;
 
-  function processContainers(settings: Array<ContainerSetting>) {
-    for (let i = 0, length = settings.length; i < length; i++) {
-      const setting = settings[i];
-      setting.items = setting.container.children;
-    }
-  }
-
   function isContainer(element: Element) {
-    const index = containers.findIndex((setting) => setting.container.isSameNode(element));
+    const index = containers.findIndex((setting) => setting.container === element);
     return index > -1 || options.isContainer(element);
   }
 
@@ -73,15 +69,76 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     if (!_grabbed) {
       return;
     }
+    if (isInvalidMouseButton(event as MouseEvent)) {
+      return;
+    }
+  }
+
+  function canStart(element: Element): GrabbedContext | undefined {
+    if (geschleppt.isDragging && _mirror) {
+      return;
+    }
+    if (isContainer(element)) {
+      return;
+    }
+
+    const handle = element;
+
+    let source: HTMLElement | undefined;
+    let item: Element | undefined;
+    let sibling: Element | undefined;
+
+    for (let i = containers.length; i-- !== 0; ) {
+      source = containers[i].container;
+      if (source.contains(element)) {
+        const children = source.children
+        for (let j = children.length; j-- !== 0; ) {
+          const child = children.item(j);
+          if (child?.contains(element)) {
+            item = child;
+            sibling = children.item(j + 1) || undefined;
+            break;
+          }
+        }
+
+        if (item) {
+          break;
+        }
+      }
+    }
+
+    if (!source || !item || options.isInvalid(item, handle)) {
+      return;
+    }
+
+    if (!options.isMovable(item, source, handle, sibling)) {
+      return;
+    }
+
+    return {
+      item,
+      source,
+    };
   }
 
   function grab(event: MouseEvent | TouchEvent) {
     const mouseEvent = event as MouseEvent;
-    if (mouseEvent.button !== 0 || mouseEvent.metaKey || mouseEvent.ctrlKey) {
+    if (isInvalidMouseButton(mouseEvent)) {
       return;
     }
 
+    const item = event.target as Element;
+    const context = canStart(item);
+    if (!context) {
+      return;
+    }
+
+    _grabbed = context;
     registerMovementEvents();
+
+    if (event.type === 'mousedown') {
+      event.preventDefault();
+    }
   }
 
   function ungrab() {
@@ -91,6 +148,45 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   function release(event: MouseEvent | TouchEvent) {
     ungrab();
     registerMovementEvents(true);
+  }
+
+  function drag(event: MouseEvent | TouchEvent) {
+    if (!_mirror) {
+      return;
+    }
+    event.preventDefault();
+  }
+
+  function isInvalidMouseButton(event: MouseEvent) {
+    return event.button !== 0 || event.metaKey || event.ctrlKey;
+  }
+  
+  function createMirror() {
+    if (_mirror) {
+      return;
+    }
+
+    const item = _grabbed?.item;
+    if (item) {
+      const rectangle = item.getBoundingClientRect();
+      _mirror = item.cloneNode(true) as HTMLElement;
+      _mirror.style.width = rectangle.width + 'px';
+      _mirror.style.height = rectangle.height + 'px';
+      // remove the moving-element and add the ghost class
+      options.mirrorContainer.appendChild(_mirror);
+      registerMouseEvents('add', 'mousemove', drag);
+      // add unselectable-element to the mirrorContainer
+      geschleppt.emit('cloned', _mirror, item, 'mirror');
+    }
+  }
+  
+  function removeMirror() {
+    if (_mirror) {
+      // remove the unselectable-element class from mirrorContainer
+      registerMouseEvents('remove', 'mousemove', drag);
+      _mirror.parentElement?.removeChild(_mirror)
+      _mirror = undefined;
+    }
   }
 };
 

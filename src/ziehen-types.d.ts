@@ -12,6 +12,8 @@ export interface ContainerSetting {
 export interface GlobalOptions {
   mirrorContainer: HTMLElement;
   isContainer?: (element: Element) => boolean;
+  isInvalid?: (item: Element, handle: Element) => boolean;
+  isMovable?: (item: Element, source: HTMLElement, handle: Element, sibling?: Element) => boolean;
 }
 
 /**
@@ -39,6 +41,7 @@ export type EmitterListeners = (EmitterDragListener | EmitterDropListener | Emit
  */
 export interface Geschleppt {
   containers?: Array<HTMLElement>;
+  isDragging: boolean;
   on: (type: EmitterEvents, listener: EmitterListeners) => Geschleppt;
   once: (type: EmitterEvents, listener: EmitterListeners) => Geschleppt;
   off: (type: EmitterEvents, listener?: EmitterListeners) => Geschleppt;
