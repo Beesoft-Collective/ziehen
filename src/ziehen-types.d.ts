@@ -1,11 +1,11 @@
 export interface ContainerOptions {
-  orientation: 'vertical' | 'horizontal';
+  orientation: 'vertical' | 'horizontal' | 'freeform';
+  isCopy?: boolean;
 }
 
 export interface ContainerSetting {
   id: string | number;
   container: HTMLElement;
-  items?: HTMLCollection;
   options: ContainerOptions;
 }
 
@@ -13,7 +13,10 @@ export interface GlobalOptions {
   mirrorContainer: HTMLElement;
   isContainer?: (element: Element) => boolean;
   isInvalid?: (item: Element, handle: Element) => boolean;
-  isMovable?: (item: Element, source: HTMLElement, handle: Element, sibling?: Element) => boolean;
+  isMovable?: (item: Element, source: ContainerSetting, handle: Element, sibling?: Element) => boolean;
+  slideFactorX?: number;
+  slideFactorY?: number;
+  ignoreInputTextSelection?: boolean;
 }
 
 /**
@@ -21,14 +24,14 @@ export interface GlobalOptions {
  */
 export interface GrabbedContext {
   item: Element;
-  source: HTMLElement;
+  source: ContainerSetting;
 }
 
 export type OperationType = 'remove' | 'add';
 export type MouseTypes = 'mousedown' | 'mouseup' | 'mousemove';
 export type TouchTypes = 'touchstart' | 'touchend' | 'touchmove';
 
-export type EmitterEvents = 'drag' | 'drop' | 'cloned';
+export type EmitterEvents = 'drag' | 'drop' | 'cloned' | 'cancel' | 'dragend';
 
 export type EmitterDragListener = (element: Element, source: HTMLElement) => void;
 export type EmitterDropListener = (element: Element, target: HTMLElement, source: HTMLElement, sibling: Element) => void;
@@ -48,7 +51,7 @@ export interface Geschleppt {
 }
 
 export interface GeschlepptPrivate {
-  emit: (type: EmitterEvents, ...args: Array<Element | HTMLElement | string>) => void;
+  emit: (type: EmitterEvents, ...args: Array<Element | HTMLElement | ContainerSetting | string>) => void;
 }
 
 export type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
