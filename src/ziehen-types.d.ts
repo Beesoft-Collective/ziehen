@@ -1,10 +1,9 @@
 export interface ContainerOptions {
-  orientation: 'vertical' | 'horizontal' | 'freeform';
+  orientation: 'vertical' | 'horizontal';
   isCopy?: boolean;
 }
 
 export interface ContainerSetting {
-  id: string | number;
   container: HTMLElement;
   options: ContainerOptions;
 }
@@ -14,6 +13,8 @@ export interface GlobalOptions {
   isContainer?: (element: Element) => boolean;
   isInvalid?: (item: Element, handle: Element) => boolean;
   isMovable?: (item: Element, source: ContainerSetting, handle: Element, sibling?: Element) => boolean;
+  getContainerSetting?: (container: HTMLElement) => ContainerSetting | undefined;
+  canAccept?: (item: Element, target: HTMLElement, source: ContainerSetting, sibling?: Element | null) => boolean;
   slideFactorX?: number;
   slideFactorY?: number;
   ignoreInputTextSelection?: boolean;
@@ -45,6 +46,7 @@ export type EmitterListeners = (EmitterDragListener | EmitterDropListener | Emit
 export interface Geschleppt {
   containers?: Array<HTMLElement>;
   isDragging: boolean;
+  canMove: (item: Element) => boolean;
   on: (type: EmitterEvents, listener: EmitterListeners) => Geschleppt;
   once: (type: EmitterEvents, listener: EmitterListeners) => Geschleppt;
   off: (type: EmitterEvents, listener?: EmitterListeners) => Geschleppt;

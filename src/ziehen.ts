@@ -10,9 +10,13 @@ import {
   WithRequiredProperty
 } from './ziehen-types';
 
+const documentElement = document.documentElement;
+
 const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOptions) => {
   let _moveX: number | undefined;
   let _moveY: number | undefined;
+  let _offsetX: number | undefined;
+  let _offsetY: number | undefined;
 
   let _grabbed: GrabbedContext | undefined;
   let _mirror: HTMLElement | undefined;
@@ -22,11 +26,13 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   let _initialSibling: Element | undefined;
   let _currentSibling: Element | undefined;
 
-  const options: WithRequiredProperty<GlobalOptions, 'isContainer' | 'isInvalid' | 'isMovable' | 'slideFactorX' | 'slideFactorY' | 'ignoreInputTextSelection'> = {
+  const options: WithRequiredProperty<GlobalOptions, 'isContainer' | 'isInvalid' | 'isMovable' | 'slideFactorX' | 'slideFactorY' | 'ignoreInputTextSelection' | 'canAccept'> = {
     mirrorContainer: document.body,
     isContainer: globalOptions.isContainer || never,
     isInvalid: globalOptions.isInvalid || never,
     isMovable: globalOptions.isMovable || always,
+    canAccept: globalOptions.canAccept || always,
+    getContainerSetting: globalOptions.getContainerSetting,
     slideFactorX: globalOptions.slideFactorX || 0,
     slideFactorY: globalOptions.slideFactorY || 0,
     ignoreInputTextSelection: globalOptions.ignoreInputTextSelection || true,
@@ -36,6 +42,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   const geschleppt = ziehenEmitter({
     containers: containers.map((setting) => setting.container),
     isDragging: false,
+    canMove,
   });
 
   registerEvents();
@@ -45,6 +52,11 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   function isContainer(element: Element) {
     const index = containers.findIndex((setting) => setting.container === element);
     return index > -1 || options.isContainer(element);
+  }
+
+  function getContainerSetting(element: HTMLElement) {
+    const containerSetting = containers.find((setting) => setting.container === element);
+    return containerSetting || options.getContainerSetting?.(element);
   }
 
   function registerEvents(shouldRemove = true) {
@@ -119,6 +131,18 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     const grabbed = _grabbed;
     registerMovementEvents(true);
     registerPreventEvents();
+    end();
+    start(grabbed);
+
+    if (_item) {
+      const offset = getOffset(_item);
+      _offsetX = clientX(event) - offset.left;
+      _offsetY = clientY(event) - offset.top;
+
+      // add the moving-element class
+      createMirror();
+      drag(event);
+    }
   }
 
   function canStart(element: Element): GrabbedContext | undefined {
@@ -166,6 +190,10 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
       item,
       source,
     };
+  }
+  
+  function canMove(item: Element) {
+    return !!canStart(item);
   }
 
   function grab(event: MouseEvent | TouchEvent) {
@@ -230,7 +258,18 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   
   function release(event: MouseEvent | TouchEvent) {
     ungrab();
-    registerMovementEvents(true);
+
+    if (!geschleppt.isDragging) {
+      return;
+    }
+
+    const item = _copy || _item;
+    if (item) {
+      const positionX = clientX(event) || 0;
+      const positionY = clientY(event) || 0;
+      const elementBehindCursor = getElementBehindPoint(item, positionX, positionY);
+      const dropTarget = findDropTarget(elementBehindCursor, positionX, positionY);
+    }
   }
 
   function drop(item: Element, target: HTMLElement) {
@@ -268,7 +307,20 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     _source = _item = _copy = _initialSibling = _currentSibling = undefined;
   }
   
-  function isInitialPlacement(target: HTMLElement, possibleSibling?: Element) {
+  function getImmediateChild(dropTarget: HTMLElement, target: HTMLElement) {
+    let immediate: HTMLElement | null = target;
+    while (immediate !== dropTarget && immediate?.parentElement !== dropTarget) {
+      immediate = immediate?.parentElement || null;
+    }
+
+    if (immediate === documentElement) {
+      return null;
+    }
+
+    return immediate;
+  }
+  
+  function isInitialPlacement(target: HTMLElement, possibleSibling?: Element | null) {
     let sibling: Element;
     if (possibleSibling) {
       sibling = possibleSibling;
@@ -280,6 +332,66 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     }
 
     return target === _source?.container && sibling === _initialSibling;
+  }
+  
+  function findDropTarget(elementBehindCursor: Element, clientX: number, clientY: number) {
+    let target: HTMLElement | null = elementBehindCursor as HTMLElement;
+    while (target && !accepted()) {
+      target = target.parentElement;
+    }
+    return target;
+
+    function accepted() {
+      if (!target || !isContainer(target)) {
+        return false;
+      }
+
+      const immediate = getImmediateChild(target, elementBehindCursor as HTMLElement);
+      if (!immediate) return false;
+      const reference = getReference(target, immediate, clientX, clientY);
+      const initial = isInitialPlacement(target, reference);
+      if (initial) {
+        return true;
+      }
+
+      return _item && _source && options.canAccept(_item, target, _source, reference);
+    }
+  }
+  
+  function getReference(dropTarget: HTMLElement, target: HTMLElement, x: number, y: number) {
+    const containerSetting = getContainerSetting(dropTarget);
+    if (!containerSetting) return null;
+
+    const horizontal = containerSetting.options.orientation === 'horizontal';
+    return target !== dropTarget ? inside() : outside();
+
+    function outside() {
+      for (let i = dropTarget.children.length; i-- !== 0; ) {
+        const element = dropTarget.children[i];
+        const rectangle = element.getBoundingClientRect();
+
+        if (horizontal && (rectangle.left + rectangle.width / 2) > x) {
+          return element;
+        } else if (!horizontal && (rectangle.top + rectangle.height / 2) > y) {
+          return element;
+        }
+      }
+
+      return null;
+    }
+    
+    function inside() {
+      const rectangle = target.getBoundingClientRect();
+      if (horizontal) {
+        return resolve(x > rectangle.left + rectangle.width / 2);
+      }
+
+      return resolve(y > rectangle.top + rectangle.height / 2);
+    }
+
+    function resolve(after: boolean) {
+      return after ? nextElement(target) : target;
+    }
   }
 
   function isInvalidMouseButton(event: MouseEvent) {
@@ -326,6 +438,39 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     return event as MouseEvent;
   }
   
+  function getOffset(element: Element) {
+    const rectangle = element.getBoundingClientRect();
+    const scrollLeft = getScroll('scrollLeft', 'scrollX') as number;
+    const scrollTop = getScroll('scrollTop', 'scrollY') as number;
+
+    return {
+      left: rectangle.left + scrollLeft,
+      top: rectangle.top + scrollTop,
+    };
+  }
+  
+  function getScroll(scrollProp: keyof HTMLElement, offsetProp: keyof Window) {
+    const globalRecord = window as Record<keyof Window, unknown>;
+    if (globalRecord[offsetProp] !== undefined) {
+      return globalRecord[offsetProp];
+    }
+    if (documentElement.clientHeight) {
+      return documentElement[scrollProp];
+    }
+
+    return document.body[scrollProp];
+  }
+  
+  function getElementBehindPoint(point: Element, x: number, y: number) {
+    const state = point.className || '';
+    point.className += ' hide-element';
+
+    const element = document.elementFromPoint(x, y);
+    point.className = state;
+
+    return element;
+  }
+  
   function clientX(event: MouseEvent | TouchEvent) {
     return getCorrectEvent(event).clientX || 0;
   }
@@ -359,7 +504,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   }
 };
 
-const never = (...args: Array<unknown>) => false;
-const always = (...args: Array<unknown>) => true;
+const never = (..._args: Array<unknown>) => false;
+const always = (..._args: Array<unknown>) => true;
 
 export default ziehen;
