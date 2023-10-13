@@ -13,6 +13,7 @@ import {
 const documentElement = document.documentElement;
 
 const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOptions) => {
+  console.log('ziehen called');
   let _moveX: number | undefined;
   let _moveY: number | undefined;
   let _offsetX: number | undefined;
@@ -199,7 +200,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   function grab(event: MouseEvent | TouchEvent) {
     _moveX = clientX(event);
     _moveY = clientY(event);
-
+    console.log('moveX', _moveX, 'moveY', _moveY);
     const mouseEvent = event as MouseEvent;
     if (isInvalidMouseButton(mouseEvent)) {
       return;
@@ -250,16 +251,24 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   }
 
   function drag(event: MouseEvent | TouchEvent) {
-    if (!_mirror) {
+    if (!_mirror || !_offsetX || !_offsetY) {
       return;
     }
     event.preventDefault();
+
+    const _clientX = clientX(event);
+    const _clientY = clientY(event);
+    const x = _clientX - _offsetX;
+    const y = _clientY - _offsetY;
+
+    _mirror.style.left = `${x}px`;
+    _mirror.style.top = `${y}px`;
   }
   
   function release(event: MouseEvent | TouchEvent) {
     ungrab();
 
-    if (!geschleppt.isDragging) {
+    if (!geschleppt.isDragging || !_mirror || !_source) {
       return;
     }
 
@@ -267,14 +276,22 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     if (item) {
       const positionX = clientX(event) || 0;
       const positionY = clientY(event) || 0;
-      const elementBehindCursor = getElementBehindPoint(item, positionX, positionY);
+      const elementBehindCursor = getElementBehindPoint(_mirror, positionX, positionY);
+      if (!elementBehindCursor) return;
       const dropTarget = findDropTarget(elementBehindCursor, positionX, positionY);
+      if (dropTarget && ((_copy && _source?.options.canCopySortSource === true) || (!_copy || dropTarget !== _source.container))) {
+        drop(item, dropTarget);
+      } else if (_source.options.removeOnSpill === true) {
+        remove();
+      } else {
+        cancel();
+      }
     }
   }
 
   function drop(item: Element, target: HTMLElement) {
     const parent = item.parentElement;
-    if (parent && _copy && _item && _source?.options.isCopy && target === _source.container) {
+    if (parent && _copy && _item && _source?.options.canCopySortSource === true && target === _source.container) {
       parent.removeChild(_item);
     }
 
@@ -282,6 +299,50 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
       geschleppt.emit('cancel', item, _source, _source);
     } else if (_source && _currentSibling) {
       geschleppt.emit('drop', item, target, _source, _currentSibling);
+    }
+
+    cleanup();
+  }
+  
+  function remove() {
+    if (!geschleppt.isDragging || !_source) {
+      return;
+    }
+
+    const item = _copy || _item;
+    if (!item) return;
+    const parent = item.parentElement;
+    if (!parent) return;
+
+    parent.removeChild(item);
+    geschleppt.emit(_copy ? 'cancel' : 'remove', item, parent, _source);
+    cleanup();
+  }
+
+  function cancel(revert = false) {
+    if (!geschleppt.isDragging || !_source) {
+      return;
+    }
+
+    const reverts = revert || _source.options.revertOnSpill === true;
+    const item = _copy || _item;
+    if (!item) return;
+    const parent = item.parentElement;
+    if (!parent) return;
+    const initial = isInitialPlacement(parent);
+
+    if (!initial && reverts) {
+      if (_copy) {
+        parent.removeChild(_copy);
+      } else if (_initialSibling) {
+        _source.container.insertBefore(item, _initialSibling);
+      }
+    }
+
+    if (initial || reverts) {
+      geschleppt.emit('cancel', item, _source, _source);
+    } else if (_currentSibling) {
+      geschleppt.emit('drop', item, parent, _source, _currentSibling);
     }
 
     cleanup();

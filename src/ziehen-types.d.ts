@@ -1,6 +1,17 @@
 export interface ContainerOptions {
   orientation: 'vertical' | 'horizontal';
   isCopy?: boolean;
+  canCopySortSource?: boolean;
+  /**
+   * When an item is dragged outside the source and dropped, but not in another source it will be removed from the
+   * container.
+   */
+  removeOnSpill?: boolean;
+  /**
+   * When an item is dragged outside the source and dropped, but not in another source it will be returned back to the
+   * original location within the source.
+   */
+  revertOnSpill?: boolean;
 }
 
 export interface ContainerSetting {
@@ -32,7 +43,7 @@ export type OperationType = 'remove' | 'add';
 export type MouseTypes = 'mousedown' | 'mouseup' | 'mousemove';
 export type TouchTypes = 'touchstart' | 'touchend' | 'touchmove';
 
-export type EmitterEvents = 'drag' | 'drop' | 'cloned' | 'cancel' | 'dragend';
+export type EmitterEvents = 'drag' | 'drop' | 'cloned' | 'cancel' | 'remove' | 'dragend';
 
 export type EmitterDragListener = (element: Element, source: HTMLElement) => void;
 export type EmitterDropListener = (element: Element, target: HTMLElement, source: HTMLElement, sibling: Element) => void;

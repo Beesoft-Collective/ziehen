@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <title>Ziehen Test</title>
+  <script type='module' src='./dist/ziehen.es.js'>
+    import ziehen from './types/index.js';
+
+    ziehen([
+      { container: document.getElementById('container1'), options: { orientation: 'vertical'}},
+      { container: document.getElementById('container2'), options: { orientation: 'vertical'}}
+    ], { mirrorContainer: document.body });
+  </script>
+</head>
+<body>
+  <div style='display: flex; width: 600px'>
+    <div style='width: 45%; padding: 10px; border: dashed 1px black' id='container1'>
+      <div style='padding: 16px; border: solid 1px grey'>Item 1</div>
+      <div style='padding: 16px; border: solid 1px grey'>Item 2</div>
+      <div style='padding: 16px; border: solid 1px grey'>Item 3</div>
+      <div style='padding: 16px; border: solid 1px grey'>Item 4</div>
+    </div>
+    <div style='width: 10%'>&nbsp;</div>
+    <div style='width: 45%; padding: 10px; border: dashed 1px black' id='container2'></div>
+  </div>
+</body>
+</html>
