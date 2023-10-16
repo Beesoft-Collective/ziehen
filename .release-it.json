@@ -1,0 +1,20 @@
+{
+  "npm": {
+    "publish": true
+  },
+  "git": {
+    "commitMessage": "[automated commit] Release v${version}",
+    "tagAnnotation": "Release v${version}",
+    "tagName": "v${version}"
+  },
+  "github": {
+    "release": true,
+    "releaseName": "Release v${version}",
+    "timeout": 30
+  },
+  "plugins": {
+    "@release-it/bumper": {
+      "in": "package.json"
+    }
+  }
+}
