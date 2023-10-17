@@ -11,6 +11,7 @@ export default defineConfig({
       rollupTypes: true,
       outDir: 'types',
       insertTypesEntry: true,
+      copyDtsFiles: true,
     }),
     terser(),
     gzipPlugin(),
@@ -22,5 +23,6 @@ export default defineConfig({
       formats: ['es', 'umd'],
       fileName: (format) => `ziehen.${format}.js`,
     },
+    sourcemap: false,
   }
 });

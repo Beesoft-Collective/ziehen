@@ -17,7 +17,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
     "newLine": "lf",
 
     /* Linting */

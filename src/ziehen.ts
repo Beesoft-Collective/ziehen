@@ -13,7 +13,6 @@ import {
 const documentElement = document.documentElement;
 
 const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOptions) => {
-  console.log('ziehen called');
   let _moveX: number | undefined;
   let _moveY: number | undefined;
   let _offsetX: number | undefined;
@@ -60,7 +59,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     return containerSetting || options.getContainerSetting?.(element);
   }
 
-  function registerEvents(shouldRemove = true) {
+  function registerEvents(shouldRemove = false) {
     const operation: OperationType = shouldRemove ? 'remove' : 'add';
     registerMouseEvents(operation, 'mousedown', grab);
     registerMouseEvents(operation, 'mouseup', release);
@@ -134,7 +133,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     registerPreventEvents();
     end();
     start(grabbed);
-
+    console.log('grabbed item', _item);
     if (_item) {
       const offset = getOffset(_item);
       _offsetX = clientX(event) - offset.left;

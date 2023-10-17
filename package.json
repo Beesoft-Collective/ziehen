@@ -4,6 +4,11 @@
   "author": "Brandon Trabon",
   "version": "0.0.1-0",
   "type": "module",
+  "keywords": [
+    "drag drop",
+    "drag",
+    "drop"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Beehive-Software-Consultants/ziehen"
