@@ -24,7 +24,8 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   let _item: Element | undefined;
   let _copy: Element | undefined;
   let _initialSibling: Element | undefined;
-  let _currentSibling: Element | undefined;
+  let _currentSibling: Element | undefined | null;
+  let _lastDropTarget: HTMLElement | null;
 
   const options: WithRequiredProperty<GlobalOptions, 'isContainer' | 'isInvalid' | 'isMovable' | 'slideFactorX' | 'slideFactorY' | 'ignoreInputTextSelection' | 'canAccept'> = {
     mirrorContainer: document.body,
@@ -133,13 +134,12 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     registerPreventEvents();
     end();
     start(grabbed);
-    console.log('grabbed item', _item);
+
     if (_item) {
       const offset = getOffset(_item);
       _offsetX = clientX(event) - offset.left;
       _offsetY = clientY(event) - offset.top;
 
-      // add the moving-element class
       createMirror();
       drag(event);
     }
@@ -199,7 +199,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   function grab(event: MouseEvent | TouchEvent) {
     _moveX = clientX(event);
     _moveY = clientY(event);
-    console.log('moveX', _moveX, 'moveY', _moveY);
+
     const mouseEvent = event as MouseEvent;
     if (isInvalidMouseButton(mouseEvent)) {
       return;
@@ -250,7 +250,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
   }
 
   function drag(event: MouseEvent | TouchEvent) {
-    if (!_mirror || !_offsetX || !_offsetY) {
+    if (!_mirror || !_offsetX || !_offsetY || !_source) {
       return;
     }
     event.preventDefault();
@@ -262,6 +262,49 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
 
     _mirror.style.left = `${x}px`;
     _mirror.style.top = `${y}px`;
+
+    const item = _copy || _item;
+    const elementBehindCursor = getElementBehindPoint(_mirror, _clientX, _clientY);
+    if (!elementBehindCursor || !item) return;
+    let dropTarget = findDropTarget(elementBehindCursor, _clientX, _clientY);
+    const changed = dropTarget !== null && dropTarget !== _lastDropTarget;
+    if (changed || dropTarget === null) {
+      // emit out event
+      _lastDropTarget = dropTarget;
+      // emit over event
+    }
+
+    const parent = item.parentElement;
+    if (dropTarget === _source.container && _copy && !_source.options.canCopySortSource) {
+      if (parent) {
+        parent.removeChild(item);
+      }
+
+      return;
+    }
+
+    if (!dropTarget || !_initialSibling) return;
+
+    let reference: Element | null;
+    const immediate = getImmediateChild(dropTarget, elementBehindCursor as HTMLElement);
+    if (immediate) {
+      reference = getReference(dropTarget, immediate, _clientX, _clientY);
+    } else if (_source.options.revertOnSpill === true && !_copy) {
+      reference = _initialSibling;
+      dropTarget = _source.container;
+    } else {
+      if (_copy && parent) {
+        parent.removeChild(item);
+      }
+
+      return;
+    }
+    console.log('reference', reference, 'immediate', immediate, 'item', item);
+    if ((reference === null && changed) || reference !== item && reference !== nextElement(item)) {
+      _currentSibling = reference;
+      dropTarget.insertBefore(item, reference);
+      // emit the "shadow" event
+    }
   }
   
   function release(event: MouseEvent | TouchEvent) {
@@ -467,6 +510,7 @@ const ziehen = (containers: Array<ContainerSetting>, globalOptions: GlobalOption
     if (item) {
       const rectangle = item.getBoundingClientRect();
       _mirror = item.cloneNode(true) as HTMLElement;
+      _mirror.className += ' moving-element';
       _mirror.style.width = rectangle.width + 'px';
       _mirror.style.height = rectangle.height + 'px';
       // remove the moving-element and add the ghost class
