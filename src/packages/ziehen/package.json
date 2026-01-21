@@ -1,0 +1,11 @@
+{
+  "name": "ziehen",
+  "type": "module",
+  "scripts": {
+    "build": "rimraf build && rimraf types && bunx vite build",
+    "storybook": "storybook dev -p 6006"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
