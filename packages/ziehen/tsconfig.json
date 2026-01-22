@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.json",
+  "exclude": [
+    "node_modules", "dist", "types", "public"],
+  "include": ["src/**/*", "./.storybook/**/*",
+    "vite.config.ts"
+  ]
+}
