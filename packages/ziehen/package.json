@@ -1,0 +1,7 @@
+{
+  "name": "ziehen",
+  "scripts": {
+    "build": "rimraf build && rimraf types && bunx vite build"
+  },
+  "type": "module"
+}

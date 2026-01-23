@@ -1,0 +1,11 @@
+{
+  "name": "react-ziehen",
+  "module": "index.ts",
+  "type": "module",
+  "dependencies": {
+    "ziehen": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

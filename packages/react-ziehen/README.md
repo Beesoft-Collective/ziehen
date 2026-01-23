@@ -1,4 +1,4 @@
-# ziehen
+# react-ziehen
 
 To install dependencies:
 

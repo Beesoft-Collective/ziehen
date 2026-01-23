@@ -1,4 +1,4 @@
-import { EmitterListeners, Geschleppt, GeschlepptPrivate } from './ziehen-types';
+import type { EmitterListeners, Geschleppt, GeschlepptPrivate } from './ziehen-types';
 
 const ziehenEmitter = (object?: Omit<Geschleppt, 'on' | 'once' | 'off'>) => {
   // it doesn't seem there is any way to accomplish settings an object without certain required properties even when

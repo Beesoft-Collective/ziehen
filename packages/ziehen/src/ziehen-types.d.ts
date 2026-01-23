@@ -1,6 +1,13 @@
 export interface ContainerOptions {
+  /**
+   * Determines the alignment of the items within a container.
+   */
   orientation: 'vertical' | 'horizontal';
-  isCopy?: boolean;
+  /**
+   * When dragging begins if this setting is true then a copy of the dragged item will be made instead of the item
+   * itself being moved. This is useful for "builder" style applications.
+   */
+  createCopy?: boolean;
   canCopySortSource?: boolean;
   /**
    * When an item is dragged outside the source and dropped, but not in another source it will be removed from the
