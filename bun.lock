@@ -18,6 +18,7 @@
         "eslint-plugin-prettier": "^5.5.5",
         "eslint-plugin-storybook": "^10.1.11",
         "globals": "^17.0.0",
+        "jiti": "^2.6.1",
         "prettier": "^3.8.0",
         "release-it": "^19.2.4",
         "rimraf": "^6.1.2",
@@ -43,14 +44,6 @@
     },
     "packages/ziehen": {
       "name": "ziehen",
-      "devDependencies": {
-        "@eslint/js": "^9.39.2",
-        "@types/bun": "latest",
-        "eslint": "^9.39.2",
-        "globals": "^17.0.0",
-        "jiti": "^2.6.1",
-        "typescript-eslint": "^8.53.1",
-      },
     },
   },
   "packages": {
